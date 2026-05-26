@@ -1,0 +1,83 @@
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  generatedFileExtension = "ts"
+  moduleFormat           = "cjs"
+  importFileExtension    = ""
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// model Movie {
+//   id          String  @id @default(uuid())
+//   title       String
+//   description String?
+//   releaseYear Int     @map("release_year")
+//   rating      Float   @default(0.0)
+//   isAvailable Boolean @default(true) @map("is_available")
+//   genre       Genre   @default(DRAMA)
+
+//   posterId String?      @unique @map("poster_id")
+//   poster   MoviePoster? @relation("movie_posters", fields: [posterId], references: [id])
+
+//   reviews Review[] @relation("movie_reviews")
+//   actors  Actor[]  @relation("movie_actors")
+
+//   createdAt DateTime @default(now()) @map("created_at")
+//   updatedAt DateTime @updatedAt @map("updated_at")
+
+//   @@map("movies")
+// }
+
+// model MoviePoster {
+//   id String @id @default(uuid())
+
+//   imageUrl String @map("image_url")
+
+//   movie Movie? @relation("movie_posters")
+
+//   createdAt DateTime @default(now()) @map("created_at")
+//   updatedAt DateTime @updatedAt @map("updated_at")
+
+//   @@map("movie_posters")
+// }
+
+// model Review {
+//   id          String  @id @default(uuid())
+//   description String
+//   rating      Decimal @default(0.0)
+
+//   movieId String @map("movie_id")
+//   movie   Movie  @relation("movie_reviews", fields: [movieId], references: [id], onDelete: Cascade)
+
+//   createdAt DateTime @default(now()) @map("created_at")
+//   updatedAt DateTime @updatedAt @map("updated_at")
+
+//   @@map("reviews")
+// }
+
+// model Actor {
+//   id String @id @default(uuid())
+
+//   name String
+
+//   movies Movie[] @relation("movie_actors")
+
+//   createdAt DateTime @default(now()) @map("created_at")
+//   updatedAt DateTime @updatedAt @map("updated_at")
+
+//   @@map("actors")
+// }
+
+// enum Genre {
+//   ACTION
+//   COMEDY
+//   DRAMA
+//   HORROR
+
+//   @@map("genres_enum")
+// }
