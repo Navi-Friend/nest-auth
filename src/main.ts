@@ -1,9 +1,10 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import * as dotenvExpand from 'dotenv-expand';
 import { config } from 'dotenv';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
+import { setupSwagger } from './utils/swagger.util';
 
 async function bootstrap() {
 	const env = config();
@@ -11,20 +12,12 @@ async function bootstrap() {
 
 	const app = await NestFactory.create(AppModule);
 
+	app.use(cookieParser());
 	app.useGlobalPipes(new ValidationPipe());
+	// Чтобы использовать class-transformer в response автоматически
+	app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
-	const swagger = new DocumentBuilder()
-		.setTitle('Nest auth api')
-		.setDescription('API documentation for Nest authorization')
-		.build();
-
-	const document = SwaggerModule.createDocument(app, swagger);
-
-	SwaggerModule.setup('/docs', app, document, {
-		jsonDocumentUrl: '/swagger.json',
-		yamlDocumentUrl: '/swagger.yaml',
-		customSiteTitle: 'Nestjs Auth Docs',
-	});
+	setupSwagger(app);
 
 	await app.listen(process.env.PORT ?? 3000);
 }
