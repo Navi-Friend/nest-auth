@@ -1,5 +1,7 @@
 import {
+	BadRequestException,
 	ConflictException,
+	ForbiddenException,
 	Injectable,
 	NotFoundException,
 	UnauthorizedException,
@@ -12,16 +14,25 @@ import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { JwtPayload } from './interfaces/jwt.interface';
 import { LoginRequest } from './dto/request/login.dto';
 import { AuthResponse } from './dto/response/auth.dto';
+import { randomBytes } from 'crypto';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class AuthService {
 	private readonly JWT_ACCESS_TOKEN_TTL: JwtSignOptions['expiresIn'];
 	private readonly JWT_REFRESH_TOKEN_TTL: JwtSignOptions['expiresIn'];
 
+	private readonly FRONTEND_URL: string;
+	private readonly VERIVICATION_TOKEN_TTL_MS: number;
+
+	private readonly MAX_EMAIL_ATTEMPTS: number;
+	private readonly ATTEMMPTS_PERIOD_MS: number;
+
 	constructor(
 		private readonly prismaService: PrismaService,
 		private readonly configService: ConfigService,
 		private readonly jwtService: JwtService,
+		private readonly mailerService: MailerService,
 	) {
 		this.JWT_ACCESS_TOKEN_TTL = this.configService.getOrThrow<string>(
 			'JWT_ACCESS_TOKEN_TTL',
@@ -29,9 +40,16 @@ export class AuthService {
 		this.JWT_REFRESH_TOKEN_TTL = this.configService.getOrThrow<string>(
 			'JWT_REFRESH_TOKEN_TTL',
 		) as JwtSignOptions['expiresIn'];
+
+		this.FRONTEND_URL = this.configService.getOrThrow<string>('FRONTEND_URL');
+
+		this.VERIVICATION_TOKEN_TTL_MS = 1000 * 60 * 60 * 24;
+
+		this.MAX_EMAIL_ATTEMPTS = 3;
+		this.ATTEMMPTS_PERIOD_MS = 60 * 60 * 1000;
 	}
 
-	async register(dto: RegisterRequest): Promise<AuthResponse> {
+	async register(dto: RegisterRequest): Promise<{ message: string }> {
 		const { name, email, password } = dto;
 
 		const existing = await this.prismaService.user.findUnique({
@@ -44,15 +62,27 @@ export class AuthService {
 			throw new ConflictException('User with this email already exists');
 		}
 
-		const user = await this.prismaService.user.create({
+		const verificationToken = randomBytes(32).toString('hex');
+
+		await this.prismaService.user.create({
 			data: {
 				email,
 				name,
 				password: await hash(password),
+				verificationToken,
+				verificationTokenExpiresAt: new Date(
+					Date.now() + this.VERIVICATION_TOKEN_TTL_MS,
+				),
+				isVerified: false,
 			},
 		});
 
-		return this.generateTokens(user.id);
+		this.sendEmailToken(email, name, verificationToken);
+
+		return {
+			message:
+				'User successfully created. Check email to complete registration',
+		};
 	}
 
 	async login(dto: LoginRequest): Promise<AuthResponse> {
@@ -60,7 +90,7 @@ export class AuthService {
 
 		const user = await this.prismaService.user.findUnique({
 			where: { email },
-			select: { id: true, password: true },
+			select: { id: true, password: true, isVerified: true },
 		});
 
 		if (!user) {
@@ -73,10 +103,14 @@ export class AuthService {
 			throw new NotFoundException('Incorrect email or password');
 		}
 
+		if (!user.isVerified) {
+			throw new ForbiddenException('Email is not verified');
+		}
+
 		return this.generateTokens(user.id);
 	}
 
-	private generateTokens(id: number) {
+	private generateTokens(id: number): AuthResponse {
 		const payload: JwtPayload = { id };
 
 		const accessToken = this.jwtService.sign(payload, {
@@ -90,7 +124,7 @@ export class AuthService {
 		return { accessToken, refreshToken };
 	}
 
-	async refresh(refreshToken: string) {
+	async refresh(refreshToken: string | null): Promise<AuthResponse | void> {
 		if (!refreshToken) {
 			throw new UnauthorizedException('Refresh token is not valid');
 		}
@@ -109,5 +143,99 @@ export class AuthService {
 
 			return this.generateTokens(user.id);
 		}
+	}
+
+	async verifyEmail(token: string): Promise<AuthResponse> {
+		const user = await this.prismaService.user.findUnique({
+			where: { verificationToken: token },
+		});
+
+		if (
+			!user ||
+			(user.verificationTokenExpiresAt &&
+				user.verificationTokenExpiresAt < new Date())
+		) {
+			throw new BadRequestException('Link is invalid or expired');
+		}
+
+		await this.prismaService.user.update({
+			where: { id: user.id },
+			data: {
+				isVerified: true,
+				verificationToken: null,
+				verificationTokenExpiresAt: null,
+			},
+		});
+
+		return this.generateTokens(user.id);
+	}
+
+	async resendEmail(email: string): Promise<{ message: string }> {
+		const user = await this.prismaService.user.findUnique({
+			where: { email },
+		});
+
+		// 🛡 1. Выравниваем время ответа для любых email
+		await this.sleep(500);
+
+		if (user && !user.isVerified) {
+			let attempts = user.sendEmailAttempts;
+			const now = new Date();
+
+			if (
+				user.lastEmailSentAt &&
+				now.getTime() - user.lastEmailSentAt.getTime() >
+					this.ATTEMMPTS_PERIOD_MS
+			) {
+				attempts = 0;
+			}
+
+			if (attempts < this.MAX_EMAIL_ATTEMPTS) {
+				const verificationToken = randomBytes(32).toString('hex');
+				const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+				await this.prismaService.user.update({
+					where: { id: user.id },
+					data: {
+						verificationToken,
+						verificationTokenExpiresAt: expiresAt,
+						sendEmailAttempts: attempts + 1,
+						lastEmailSentAt: now,
+					},
+				});
+
+				// rate-limit должен быть привязан к тому, кто пытается отправить,
+				// а не пользователю в бд. Поэтому ошибку о превышении числа лимитов
+				// нужно кидать глобально, а тут просто игнорить
+
+				this.sendEmailToken(user.email, user.name, verificationToken);
+			}
+		}
+		return {
+			message:
+				'If the account exists and has not been verified, a new link has been sent.',
+		};
+	}
+
+	private sendEmailToken(email: string, name: string, token: string): void {
+		const verifyUrl = `${this.FRONTEND_URL}/auth/verify-email?token=${token}`;
+
+		this.mailerService
+			.sendMail({
+				to: email,
+				subject: 'Confirm your account',
+				html: `<h2>Hello ${name} Thank your for registration at "Nest auth app"</h2>
+			        <p>Click the button below to confirm your email:</p>
+        <a href="${verifyUrl}" style="display:inline-block;padding:10px 20px;background:#007bff;color:#fff;text-decoration:none;border-radius:4px;">Confirm email</a>
+        <p>Or follow the link: <a href="${verifyUrl}">${verifyUrl}</a></p>
+        <p><small>The link is valid for 24 hours. If you haven't registered, ignore the email.</small></p>`,
+			})
+			.catch((err) => {
+				console.error(`Failed to send verification email to ${email}`, err);
+			});
+	}
+
+	private async sleep(ms: number): Promise<void> {
+		return new Promise((resolve) => setTimeout(() => resolve(), ms));
 	}
 }

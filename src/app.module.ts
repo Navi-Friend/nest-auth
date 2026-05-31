@@ -1,30 +1,23 @@
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
-
-// const typeOrmProvider = {
-//   provide: 'DATABASE_PROVIDER',
-//   useFactory: async (configService: ConfigService) => {
-//     const dataSource = new DataSource({
-//       type: 'postgres',
-//       host: 'localhost',
-//       port: 5433,
-//       username: configService.get('POSTGRES_USER'),
-//       password: '123456',
-//       database: 'nestjs-test',
-//       entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-//       synchronize: true,
-//     });
-//     return dataSource.initialize();
-//   },
-//   inject: [ConfigService],
-// };
+import { MailerModule } from '@nestjs-modules/mailer';
+import { getMailConfig } from './config/mail.config';
 
 @Module({
-	imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, AuthModule],
+	imports: [
+		ConfigModule.forRoot({ isGlobal: true }),
+		PrismaModule,
+		AuthModule,
+		MailerModule.forRootAsync({
+			imports: [ConfigModule],
+			inject: [ConfigService],
+			useFactory: getMailConfig,
+		}),
+	],
 	controllers: [AppController],
 	providers: [AppService],
 })

@@ -15,14 +15,12 @@ export class RegisterRequest {
 	name: string;
 
 	@ApiProperty({ example: 'admin@gmail.com' })
-	@ApiProperty()
 	@IsString({ message: 'Email must be a string' })
 	@IsNotEmpty({ message: 'Email is required' })
 	@IsEmail({}, { message: 'Incorrect email address' })
 	email: string;
 
 	@ApiProperty({ example: '123njkljbASf', minLength: 6, maxLength: 128 })
-	@ApiProperty()
 	@IsString({ message: 'Password must be a string' })
 	@IsNotEmpty({ message: 'Password is required' })
 	@MinLength(6)
