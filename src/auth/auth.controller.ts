@@ -25,13 +25,15 @@ import {
 	ApiUnauthorizedResponse,
 	OmitType,
 } from '@nestjs/swagger';
-import { LoginRequest } from './dto/request/login.dto';
 import { AuthCookieInterceptor } from './interceptors/cookie.interceptor';
 import { Cookies } from '../common/decorators/cookie.decorator';
 import { type Request, type Response } from 'express';
 import { AuthResponse } from './dto/response/auth.dto';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { EmailRequest } from './dto/request/email.dto';
+import { Authorization } from './decorators/authorization.decorator';
+import type { User } from '../generated/prisma/client';
+import { LoginRequest } from './dto/request/login.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Auth')
 @UseInterceptors(AuthCookieInterceptor)
@@ -70,10 +72,13 @@ export class AuthController {
 	})
 	@ApiNotFoundResponse({ description: 'Email is not verified' })
 	@ApiBadRequestResponse({ description: 'Incorrect input data' })
+	@UseGuards(AuthGuard('local'))
 	@Post('login')
 	@HttpCode(HttpStatus.OK)
-	async login(@Body() dto: LoginRequest) {
-		return await this.authService.login(dto);
+	login(@Body() dto: LoginRequest, @Req() req: Request) {
+		void dto;
+		const user = (req as Request & { user: User }).user;
+		return this.authService.login(user.id);
 	}
 
 	@ApiOperation({
@@ -110,11 +115,11 @@ export class AuthController {
 		description: 'Requires access token',
 	})
 	@ApiOkResponse()
-	@UseGuards(JwtAuthGuard)
+	@Authorization()
 	@Get('me')
 	@HttpCode(HttpStatus.OK)
 	me(@Req() req: Request) {
-		return req.user;
+		return (req as Request & { user: User }).user;
 	}
 
 	@ApiOperation({

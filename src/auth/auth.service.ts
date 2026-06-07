@@ -12,10 +12,10 @@ import { verify, hash } from 'argon2';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { JwtPayload } from './interfaces/jwt.interface';
-import { LoginRequest } from './dto/request/login.dto';
 import { AuthResponse } from './dto/response/auth.dto';
 import { randomBytes } from 'crypto';
 import { MailerService } from '@nestjs-modules/mailer';
+import { User } from '../generated/prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -85,29 +85,8 @@ export class AuthService {
 		};
 	}
 
-	async login(dto: LoginRequest): Promise<AuthResponse> {
-		const { email, password } = dto;
-
-		const user = await this.prismaService.user.findUnique({
-			where: { email },
-			select: { id: true, password: true, isVerified: true },
-		});
-
-		if (!user) {
-			throw new NotFoundException('Incorrect email or password');
-		}
-
-		const isValidPassword = await verify(user.password, password);
-
-		if (!isValidPassword) {
-			throw new NotFoundException('Incorrect email or password');
-		}
-
-		if (!user.isVerified) {
-			throw new ForbiddenException('Email is not verified');
-		}
-
-		return this.generateTokens(user.id);
+	login(id: number): AuthResponse {
+		return this.generateTokens(id);
 	}
 
 	private generateTokens(id: number): AuthResponse {
@@ -143,6 +122,40 @@ export class AuthService {
 
 			return this.generateTokens(user.id);
 		}
+	}
+
+	async validateJwt(id: number): Promise<User> {
+		const user = await this.prismaService.user.findUnique({
+			where: { id },
+		});
+
+		if (!user) {
+			throw new NotFoundException('User is not found');
+		}
+
+		return user;
+	}
+
+	async validatePasssword(email: string, password: string): Promise<User> {
+		const user = await this.prismaService.user.findUnique({
+			where: { email },
+		});
+
+		if (!user) {
+			throw new NotFoundException('Incorrect email or password');
+		}
+
+		const isValidPassword = await verify(user.password, password);
+
+		if (!isValidPassword) {
+			throw new NotFoundException('Incorrect email or password');
+		}
+
+		if (!user.isVerified) {
+			throw new ForbiddenException('Email is not verified');
+		}
+
+		return user;
 	}
 
 	async verifyEmail(token: string): Promise<AuthResponse> {
