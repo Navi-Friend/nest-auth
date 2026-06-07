@@ -8,6 +8,7 @@ import { AuthCookieInterceptor } from './interceptors/cookie.interceptor';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
 
 @Module({
 	imports: [
@@ -18,6 +19,12 @@ import { LocalStrategy } from './strategies/local.strategy';
 		}),
 	],
 	controllers: [AuthController],
-	providers: [AuthService, AuthCookieInterceptor, JwtStrategy, LocalStrategy],
+	providers: [
+		AuthService,
+		AuthCookieInterceptor,
+		JwtStrategy,
+		LocalStrategy,
+		GoogleStrategy,
+	],
 })
 export class AuthModule {}

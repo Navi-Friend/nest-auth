@@ -5,8 +5,9 @@ export function setupSwagger(app: INestApplication) {
 	const swagger = new DocumentBuilder()
 		.setTitle('Nest auth api')
 		.setDescription('API documentation for Nest authorization app')
-		.setVersion('1.0.0')
+		.setVersion('1.0.1')
 		.addBearerAuth()
+		.addCookieAuth('refreshToken')
 		.build();
 
 	const document = SwaggerModule.createDocument(app, swagger);

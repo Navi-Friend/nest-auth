@@ -16,6 +16,7 @@ import { AuthResponse } from './dto/response/auth.dto';
 import { randomBytes } from 'crypto';
 import { MailerService } from '@nestjs-modules/mailer';
 import { User } from '../generated/prisma/client';
+import { GoogleUser } from './interfaces/google-user.interface';
 
 @Injectable()
 export class AuthService {
@@ -136,13 +137,19 @@ export class AuthService {
 		return user;
 	}
 
-	async validatePasssword(email: string, password: string): Promise<User> {
+	async validateLocal(email: string, password: string): Promise<User> {
 		const user = await this.prismaService.user.findUnique({
 			where: { email },
 		});
 
 		if (!user) {
 			throw new NotFoundException('Incorrect email or password');
+		}
+
+		if (!user.password) {
+			throw new BadRequestException(
+				'No password has been set for this account. Log in via Google or restore the password using the link in the mail',
+			);
 		}
 
 		const isValidPassword = await verify(user.password, password);
@@ -246,6 +253,49 @@ export class AuthService {
 			.catch((err) => {
 				console.error(`Failed to send verification email to ${email}`, err);
 			});
+	}
+
+	async loginOrRegisterWithGoogle(user: GoogleUser): Promise<AuthResponse> {
+		let existingUser = await this.prismaService.user.findUnique({
+			where: { googleId: user.googleId },
+		});
+
+		if (existingUser) {
+			// Сценарий А: Пользователь уже входил через Google. Просто логиним.
+			return this.generateTokens(existingUser.id);
+		}
+
+		// 2. Ищем пользователя по email (вдруг он уже регистрировался через пароль)
+		existingUser = await this.prismaService.user.findUnique({
+			where: { email: user.email },
+		});
+
+		if (existingUser) {
+			// Сценарий Б: Аккаунт есть, привязываем к нему Google ID.
+			// И сразу помечаем как verified, так как Google уже подтвердил почту.
+			existingUser = await this.prismaService.user.update({
+				where: { id: existingUser.id },
+				data: {
+					googleId: user.googleId,
+					isVerified: true,
+					verificationToken: null,
+					verificationTokenExpiresAt: null,
+				},
+			});
+			return this.generateTokens(existingUser.id);
+		}
+
+		// 3. Сценарий В: Пользователь новый. Создаем его.
+		existingUser = await this.prismaService.user.create({
+			data: {
+				email: user.email,
+				name: user.name,
+				googleId: user.googleId,
+				isVerified: true,
+			},
+		});
+
+		return this.generateTokens(existingUser.id);
 	}
 
 	private async sleep(ms: number): Promise<void> {
