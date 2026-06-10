@@ -28,6 +28,7 @@ import {
 	ApiTags,
 	ApiUnauthorizedResponse,
 	OmitType,
+	ApiBody,
 } from '@nestjs/swagger';
 import {
 	AuthCookieInterceptor,
@@ -44,6 +45,9 @@ import { GoogleUser } from './interfaces/google-user.interface';
 import { ConfigService } from '@nestjs/config';
 import { CurrentUser } from './decorators/user.decorator';
 import type { User } from '../generated/prisma/client';
+import { Enable2FADto } from './dto/response/enable2fa.dto';
+import { Verify2FADto } from './dto/request/verify2fa.dto';
+import { Generate2FAResponseDto } from './dto/response/gerate2fa.dto';
 
 @ApiTags('Auth')
 @UseInterceptors(AuthCookieInterceptor)
@@ -88,8 +92,8 @@ export class AuthController {
 	@UseGuards(AuthGuard('local'))
 	@Post('login')
 	@HttpCode(HttpStatus.OK)
-	login(@Body() dto: LoginRequest, @CurrentUser('id') id: number) {
-		return this.authService.login(id);
+	login(@Body() dto: LoginRequest, @CurrentUser() user: User) {
+		return this.authService.login(user.id, user.isTwoFactorEnabled);
 	}
 
 	@ApiOperation({
@@ -210,22 +214,43 @@ export class AuthController {
 	}
 
 	@Authorization()
+	@ApiOperation({ summary: 'Generate a secret and QR code for setting up 2FA' })
+	@ApiOkResponse({
+		description: 'Successful. Returns the secret and QR code.',
+		type: Generate2FAResponseDto,
+	})
+	@ApiUnauthorizedResponse({ description: 'User not authorized' })
+	@ApiNotFoundResponse({ description: 'User not found' })
 	@Get('2fa/generate')
 	async generate2FACode(@CurrentUser('id') id: number) {
 		return await this.authService.generate2FACode(id);
 	}
 
 	@Authorization()
-	@Post('2fa/generate')
-	async enable2FA(@CurrentUser('id') id: number, @Body('code') code: string) {
-		return await this.authService.enable2FA(id, code);
+	@Post('2fa/enable')
+	@ApiOperation({ summary: 'Activate 2FA after scanning the QR code' })
+	@ApiBody({ type: Enable2FADto })
+	@ApiOkResponse({ description: '2FA successfully activated' })
+	@ApiBadRequestResponse({
+		description: 'Invalid code or secret not generated',
+	})
+	@ApiUnauthorizedResponse({ description: 'User not authorized' })
+	async enable2FA(@CurrentUser('id') id: number, @Body() dto: Enable2FADto) {
+		return await this.authService.enable2FA(id, dto.code);
 	}
 
 	@Post('2fa/verify')
-	async verify2FA(
-		@Body('tempToken') tempToken: string,
-		@Body('code') code: string,
-	) {
-		return await this.authService.verify2FALogin(tempToken, code);
+	@ApiOperation({ summary: 'Confirm 2FA code to complete login' })
+	@ApiBody({ type: Verify2FADto })
+	@ApiOkResponse({
+		description: 'The login is completed. Returns a pair of tokens.',
+		type: AuthResponse,
+	})
+	@ApiBadRequestResponse({ description: 'Invalid temporary token' })
+	@ApiUnauthorizedResponse({
+		description: 'Invalid 2FA code or session expired',
+	})
+	async verify2FA(@Body() dto: Verify2FADto) {
+		return await this.authService.verify2FALogin(dto);
 	}
 }

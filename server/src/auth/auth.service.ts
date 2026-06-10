@@ -19,6 +19,7 @@ import { User } from '../generated/prisma/client';
 import { GoogleUser } from './interfaces/google-user.interface';
 import { generateSecret, generateURI, verify as otpVerify } from 'otplib';
 import { toDataURL } from 'qrcode';
+import { Verify2FADto } from './dto/request/verify2fa.dto';
 
 @Injectable()
 export class AuthService {
@@ -373,7 +374,10 @@ export class AuthService {
 		});
 	}
 
-	async verify2FALogin(tempToken: string, code: string): Promise<AuthResponse> {
+	async verify2FALogin({
+		code,
+		tempToken,
+	}: Verify2FADto): Promise<AuthResponse> {
 		try {
 			const payload = this.jwtService.verify<JwtPayload>(tempToken);
 
