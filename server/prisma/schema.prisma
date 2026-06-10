@@ -25,6 +25,9 @@ model User {
   sendEmailAttempts          Int       @default(0)
   lastEmailSentAt            DateTime?
 
+  twoFactorSecret    String?
+  isTwoFactorEnabled Boolean @default(false)
+
   googleId String? @unique() @map("google_id")
 
   createdAt DateTime @default(now()) @map("created_at")

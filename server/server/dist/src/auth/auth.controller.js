@@ -25,6 +25,7 @@ const authorization_decorator_1 = require("./decorators/authorization.decorator"
 const login_dto_1 = require("./dto/request/login.dto");
 const passport_1 = require("@nestjs/passport");
 const config_1 = require("@nestjs/config");
+const user_decorator_1 = require("./decorators/user.decorator");
 let AuthController = class AuthController {
     authService;
     configService;
@@ -35,9 +36,8 @@ let AuthController = class AuthController {
     async register(dto) {
         return await this.authService.register(dto);
     }
-    login(dto, req) {
-        const user = req.user;
-        return this.authService.login(user.id);
+    login(dto, id) {
+        return this.authService.login(id);
     }
     async refresh(refreshToken) {
         return await this.authService.refresh(refreshToken);
@@ -46,8 +46,8 @@ let AuthController = class AuthController {
         res.clearCookie('refreshToken');
         res.json();
     }
-    me(req) {
-        return req.user;
+    me(user) {
+        return user;
     }
     async verifyEmail(token) {
         if (!token) {
@@ -65,6 +65,15 @@ let AuthController = class AuthController {
         (0, cookie_interceptor_1.setRefreshToCookie)(res, tokens.refreshToken, this.configService);
         const frontendUrl = this.configService.getOrThrow('FRONTEND_URL');
         res.redirect(`${frontendUrl}/auth/callback?accessToken=${tokens.accessToken}`);
+    }
+    async generate2FACode(id) {
+        return await this.authService.generate2FACode(id);
+    }
+    async enable2FA(id, code) {
+        return await this.authService.enable2FA(id, code);
+    }
+    async verify2FA(tempToken, code) {
+        return await this.authService.verify2FALogin(tempToken, code);
     }
 };
 exports.AuthController = AuthController;
@@ -105,9 +114,9 @@ __decorate([
     (0, common_1.Post)('login'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Req)()),
+    __param(1, (0, user_decorator_1.CurrentUser)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [login_dto_1.LoginRequest, Object]),
+    __metadata("design:paramtypes", [login_dto_1.LoginRequest, Number]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "login", null);
 __decorate([
@@ -151,7 +160,7 @@ __decorate([
     (0, authorization_decorator_1.Authorization)(),
     (0, common_1.Get)('me'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    __param(0, (0, common_1.Req)()),
+    __param(0, (0, user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
@@ -226,6 +235,31 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "googleAuthRedirect", null);
+__decorate([
+    (0, authorization_decorator_1.Authorization)(),
+    (0, common_1.Get)('2fa/generate'),
+    __param(0, (0, user_decorator_1.CurrentUser)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "generate2FACode", null);
+__decorate([
+    (0, authorization_decorator_1.Authorization)(),
+    (0, common_1.Post)('2fa/generate'),
+    __param(0, (0, user_decorator_1.CurrentUser)('id')),
+    __param(1, (0, common_1.Body)('code')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, String]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "enable2FA", null);
+__decorate([
+    (0, common_1.Post)('2fa/verify'),
+    __param(0, (0, common_1.Body)('tempToken')),
+    __param(1, (0, common_1.Body)('code')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "verify2FA", null);
 exports.AuthController = AuthController = __decorate([
     (0, swagger_1.ApiTags)('Auth'),
     (0, common_1.UseInterceptors)(cookie_interceptor_1.AuthCookieInterceptor),

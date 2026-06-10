@@ -26,6 +26,8 @@ export type UserMinAggregateOutputType = {
     verificationTokenExpiresAt: Date | null;
     sendEmailAttempts: number | null;
     lastEmailSentAt: Date | null;
+    twoFactorSecret: string | null;
+    isTwoFactorEnabled: boolean | null;
     googleId: string | null;
     createdAt: Date | null;
     updatedAt: Date | null;
@@ -40,6 +42,8 @@ export type UserMaxAggregateOutputType = {
     verificationTokenExpiresAt: Date | null;
     sendEmailAttempts: number | null;
     lastEmailSentAt: Date | null;
+    twoFactorSecret: string | null;
+    isTwoFactorEnabled: boolean | null;
     googleId: string | null;
     createdAt: Date | null;
     updatedAt: Date | null;
@@ -54,6 +58,8 @@ export type UserCountAggregateOutputType = {
     verificationTokenExpiresAt: number;
     sendEmailAttempts: number;
     lastEmailSentAt: number;
+    twoFactorSecret: number;
+    isTwoFactorEnabled: number;
     googleId: number;
     createdAt: number;
     updatedAt: number;
@@ -77,6 +83,8 @@ export type UserMinAggregateInputType = {
     verificationTokenExpiresAt?: true;
     sendEmailAttempts?: true;
     lastEmailSentAt?: true;
+    twoFactorSecret?: true;
+    isTwoFactorEnabled?: true;
     googleId?: true;
     createdAt?: true;
     updatedAt?: true;
@@ -91,6 +99,8 @@ export type UserMaxAggregateInputType = {
     verificationTokenExpiresAt?: true;
     sendEmailAttempts?: true;
     lastEmailSentAt?: true;
+    twoFactorSecret?: true;
+    isTwoFactorEnabled?: true;
     googleId?: true;
     createdAt?: true;
     updatedAt?: true;
@@ -105,6 +115,8 @@ export type UserCountAggregateInputType = {
     verificationTokenExpiresAt?: true;
     sendEmailAttempts?: true;
     lastEmailSentAt?: true;
+    twoFactorSecret?: true;
+    isTwoFactorEnabled?: true;
     googleId?: true;
     createdAt?: true;
     updatedAt?: true;
@@ -148,6 +160,8 @@ export type UserGroupByOutputType = {
     verificationTokenExpiresAt: Date | null;
     sendEmailAttempts: number;
     lastEmailSentAt: Date | null;
+    twoFactorSecret: string | null;
+    isTwoFactorEnabled: boolean;
     googleId: string | null;
     createdAt: Date;
     updatedAt: Date;
@@ -173,6 +187,8 @@ export type UserWhereInput = {
     verificationTokenExpiresAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null;
     sendEmailAttempts?: Prisma.IntFilter<"User"> | number;
     lastEmailSentAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null;
+    twoFactorSecret?: Prisma.StringNullableFilter<"User"> | string | null;
+    isTwoFactorEnabled?: Prisma.BoolFilter<"User"> | boolean;
     googleId?: Prisma.StringNullableFilter<"User"> | string | null;
     createdAt?: Prisma.DateTimeFilter<"User"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string;
@@ -187,6 +203,8 @@ export type UserOrderByWithRelationInput = {
     verificationTokenExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder;
     sendEmailAttempts?: Prisma.SortOrder;
     lastEmailSentAt?: Prisma.SortOrderInput | Prisma.SortOrder;
+    twoFactorSecret?: Prisma.SortOrderInput | Prisma.SortOrder;
+    isTwoFactorEnabled?: Prisma.SortOrder;
     googleId?: Prisma.SortOrderInput | Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -205,6 +223,8 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
     verificationTokenExpiresAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null;
     sendEmailAttempts?: Prisma.IntFilter<"User"> | number;
     lastEmailSentAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null;
+    twoFactorSecret?: Prisma.StringNullableFilter<"User"> | string | null;
+    isTwoFactorEnabled?: Prisma.BoolFilter<"User"> | boolean;
     createdAt?: Prisma.DateTimeFilter<"User"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string;
 }, "id" | "email" | "verificationToken" | "googleId">;
@@ -218,6 +238,8 @@ export type UserOrderByWithAggregationInput = {
     verificationTokenExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder;
     sendEmailAttempts?: Prisma.SortOrder;
     lastEmailSentAt?: Prisma.SortOrderInput | Prisma.SortOrder;
+    twoFactorSecret?: Prisma.SortOrderInput | Prisma.SortOrder;
+    isTwoFactorEnabled?: Prisma.SortOrder;
     googleId?: Prisma.SortOrderInput | Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -240,6 +262,8 @@ export type UserScalarWhereWithAggregatesInput = {
     verificationTokenExpiresAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null;
     sendEmailAttempts?: Prisma.IntWithAggregatesFilter<"User"> | number;
     lastEmailSentAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null;
+    twoFactorSecret?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null;
+    isTwoFactorEnabled?: Prisma.BoolWithAggregatesFilter<"User"> | boolean;
     googleId?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null;
     createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string;
     updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string;
@@ -253,6 +277,8 @@ export type UserCreateInput = {
     verificationTokenExpiresAt?: Date | string | null;
     sendEmailAttempts?: number;
     lastEmailSentAt?: Date | string | null;
+    twoFactorSecret?: string | null;
+    isTwoFactorEnabled?: boolean;
     googleId?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -267,6 +293,8 @@ export type UserUncheckedCreateInput = {
     verificationTokenExpiresAt?: Date | string | null;
     sendEmailAttempts?: number;
     lastEmailSentAt?: Date | string | null;
+    twoFactorSecret?: string | null;
+    isTwoFactorEnabled?: boolean;
     googleId?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -280,6 +308,8 @@ export type UserUpdateInput = {
     verificationTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sendEmailAttempts?: Prisma.IntFieldUpdateOperationsInput | number;
     lastEmailSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    isTwoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -294,6 +324,8 @@ export type UserUncheckedUpdateInput = {
     verificationTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sendEmailAttempts?: Prisma.IntFieldUpdateOperationsInput | number;
     lastEmailSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    isTwoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -308,6 +340,8 @@ export type UserCreateManyInput = {
     verificationTokenExpiresAt?: Date | string | null;
     sendEmailAttempts?: number;
     lastEmailSentAt?: Date | string | null;
+    twoFactorSecret?: string | null;
+    isTwoFactorEnabled?: boolean;
     googleId?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -321,6 +355,8 @@ export type UserUpdateManyMutationInput = {
     verificationTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sendEmailAttempts?: Prisma.IntFieldUpdateOperationsInput | number;
     lastEmailSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    isTwoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -335,6 +371,8 @@ export type UserUncheckedUpdateManyInput = {
     verificationTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     sendEmailAttempts?: Prisma.IntFieldUpdateOperationsInput | number;
     lastEmailSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    twoFactorSecret?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    isTwoFactorEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -349,6 +387,8 @@ export type UserCountOrderByAggregateInput = {
     verificationTokenExpiresAt?: Prisma.SortOrder;
     sendEmailAttempts?: Prisma.SortOrder;
     lastEmailSentAt?: Prisma.SortOrder;
+    twoFactorSecret?: Prisma.SortOrder;
+    isTwoFactorEnabled?: Prisma.SortOrder;
     googleId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -367,6 +407,8 @@ export type UserMaxOrderByAggregateInput = {
     verificationTokenExpiresAt?: Prisma.SortOrder;
     sendEmailAttempts?: Prisma.SortOrder;
     lastEmailSentAt?: Prisma.SortOrder;
+    twoFactorSecret?: Prisma.SortOrder;
+    isTwoFactorEnabled?: Prisma.SortOrder;
     googleId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -381,6 +423,8 @@ export type UserMinOrderByAggregateInput = {
     verificationTokenExpiresAt?: Prisma.SortOrder;
     sendEmailAttempts?: Prisma.SortOrder;
     lastEmailSentAt?: Prisma.SortOrder;
+    twoFactorSecret?: Prisma.SortOrder;
+    isTwoFactorEnabled?: Prisma.SortOrder;
     googleId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -421,6 +465,8 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
     verificationTokenExpiresAt?: boolean;
     sendEmailAttempts?: boolean;
     lastEmailSentAt?: boolean;
+    twoFactorSecret?: boolean;
+    isTwoFactorEnabled?: boolean;
     googleId?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
@@ -435,6 +481,8 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
     verificationTokenExpiresAt?: boolean;
     sendEmailAttempts?: boolean;
     lastEmailSentAt?: boolean;
+    twoFactorSecret?: boolean;
+    isTwoFactorEnabled?: boolean;
     googleId?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
@@ -449,6 +497,8 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
     verificationTokenExpiresAt?: boolean;
     sendEmailAttempts?: boolean;
     lastEmailSentAt?: boolean;
+    twoFactorSecret?: boolean;
+    isTwoFactorEnabled?: boolean;
     googleId?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
@@ -463,11 +513,13 @@ export type UserSelectScalar = {
     verificationTokenExpiresAt?: boolean;
     sendEmailAttempts?: boolean;
     lastEmailSentAt?: boolean;
+    twoFactorSecret?: boolean;
+    isTwoFactorEnabled?: boolean;
     googleId?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
 };
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "password" | "isVerified" | "verificationToken" | "verificationTokenExpiresAt" | "sendEmailAttempts" | "lastEmailSentAt" | "googleId" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>;
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "password" | "isVerified" | "verificationToken" | "verificationTokenExpiresAt" | "sendEmailAttempts" | "lastEmailSentAt" | "twoFactorSecret" | "isTwoFactorEnabled" | "googleId" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>;
 export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     name: "User";
     objects: {};
@@ -481,6 +533,8 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
         verificationTokenExpiresAt: Date | null;
         sendEmailAttempts: number;
         lastEmailSentAt: Date | null;
+        twoFactorSecret: string | null;
+        isTwoFactorEnabled: boolean;
         googleId: string | null;
         createdAt: Date;
         updatedAt: Date;
@@ -550,6 +604,8 @@ export interface UserFieldRefs {
     readonly verificationTokenExpiresAt: Prisma.FieldRef<"User", 'DateTime'>;
     readonly sendEmailAttempts: Prisma.FieldRef<"User", 'Int'>;
     readonly lastEmailSentAt: Prisma.FieldRef<"User", 'DateTime'>;
+    readonly twoFactorSecret: Prisma.FieldRef<"User", 'String'>;
+    readonly isTwoFactorEnabled: Prisma.FieldRef<"User", 'Boolean'>;
     readonly googleId: Prisma.FieldRef<"User", 'String'>;
     readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>;
     readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>;

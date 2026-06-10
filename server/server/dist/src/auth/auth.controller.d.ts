@@ -5,6 +5,7 @@ import { AuthResponse } from './dto/response/auth.dto';
 import { EmailRequest } from './dto/request/email.dto';
 import { LoginRequest } from './dto/request/login.dto';
 import { ConfigService } from '@nestjs/config';
+import type { User } from '../generated/prisma/client';
 export declare class AuthController {
     private readonly authService;
     private readonly configService;
@@ -12,10 +13,10 @@ export declare class AuthController {
     register(dto: RegisterRequest): Promise<{
         message: string;
     }>;
-    login(dto: LoginRequest, req: Request): AuthResponse;
+    login(dto: LoginRequest, id: number): AuthResponse;
     refresh(refreshToken: string | null): Promise<void | AuthResponse>;
     logout(res: Response): void;
-    me(req: Request): Express.User & {
+    me(user: User): {
         name: string;
         email: string;
         password: string | null;
@@ -26,6 +27,8 @@ export declare class AuthController {
         verificationTokenExpiresAt: Date | null;
         sendEmailAttempts: number;
         lastEmailSentAt: Date | null;
+        twoFactorSecret: string | null;
+        isTwoFactorEnabled: boolean;
         createdAt: Date;
         updatedAt: Date;
     };
@@ -35,4 +38,10 @@ export declare class AuthController {
     }>;
     googleAouth(): Promise<void>;
     googleAuthRedirect(req: Request, res: Response): Promise<void>;
+    generate2FACode(id: number): Promise<{
+        secret: string;
+        qrCodeDataURL: string;
+    }>;
+    enable2FA(id: number, code: string): Promise<void>;
+    verify2FA(tempToken: string, code: string): Promise<void>;
 }

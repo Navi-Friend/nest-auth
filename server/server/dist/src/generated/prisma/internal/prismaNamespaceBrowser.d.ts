@@ -31,6 +31,8 @@ export declare const UserScalarFieldEnum: {
     readonly verificationTokenExpiresAt: "verificationTokenExpiresAt";
     readonly sendEmailAttempts: "sendEmailAttempts";
     readonly lastEmailSentAt: "lastEmailSentAt";
+    readonly twoFactorSecret: "twoFactorSecret";
+    readonly isTwoFactorEnabled: "isTwoFactorEnabled";
     readonly googleId: "googleId";
     readonly createdAt: "createdAt";
     readonly updatedAt: "updatedAt";

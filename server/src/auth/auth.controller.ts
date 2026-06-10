@@ -38,11 +38,12 @@ import { type Request, type Response } from 'express';
 import { AuthResponse } from './dto/response/auth.dto';
 import { EmailRequest } from './dto/request/email.dto';
 import { Authorization } from './decorators/authorization.decorator';
-import type { User } from '../generated/prisma/client';
 import { LoginRequest } from './dto/request/login.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { GoogleUser } from './interfaces/google-user.interface';
 import { ConfigService } from '@nestjs/config';
+import { CurrentUser } from './decorators/user.decorator';
+import type { User } from '../generated/prisma/client';
 
 @ApiTags('Auth')
 @UseInterceptors(AuthCookieInterceptor)
@@ -87,9 +88,8 @@ export class AuthController {
 	@UseGuards(AuthGuard('local'))
 	@Post('login')
 	@HttpCode(HttpStatus.OK)
-	login(@Body() dto: LoginRequest, @Req() req: Request) {
-		const user = (req as Request & { user: User }).user;
-		return this.authService.login(user.id);
+	login(@Body() dto: LoginRequest, @CurrentUser('id') id: number) {
+		return this.authService.login(id);
 	}
 
 	@ApiOperation({
@@ -130,8 +130,8 @@ export class AuthController {
 	@Authorization()
 	@Get('me')
 	@HttpCode(HttpStatus.OK)
-	me(@Req() req: Request) {
-		return (req as Request & { user: User }).user;
+	me(@CurrentUser() user: User) {
+		return user;
 	}
 
 	@ApiOperation({
@@ -207,5 +207,25 @@ export class AuthController {
 		res.redirect(
 			`${frontendUrl}/auth/callback?accessToken=${tokens.accessToken}`,
 		);
+	}
+
+	@Authorization()
+	@Get('2fa/generate')
+	async generate2FACode(@CurrentUser('id') id: number) {
+		return await this.authService.generate2FACode(id);
+	}
+
+	@Authorization()
+	@Post('2fa/generate')
+	async enable2FA(@CurrentUser('id') id: number, @Body('code') code: string) {
+		return await this.authService.enable2FA(id, code);
+	}
+
+	@Post('2fa/verify')
+	async verify2FA(
+		@Body('tempToken') tempToken: string,
+		@Body('code') code: string,
+	) {
+		return await this.authService.verify2FALogin(tempToken, code);
 	}
 }

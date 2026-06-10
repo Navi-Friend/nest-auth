@@ -33,4 +33,10 @@ export declare class AuthService {
     private sendEmailToken;
     loginOrRegisterWithGoogle(user: GoogleUser): Promise<AuthResponse>;
     private sleep;
+    generate2FACode(id: number): Promise<{
+        secret: string;
+        qrCodeDataURL: string;
+    }>;
+    enable2FA(id: number, code: string): Promise<void>;
+    verify2FALogin(id: number, code: string): Promise<void>;
 }

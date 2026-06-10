@@ -63,6 +63,8 @@ exports.UserScalarFieldEnum = {
     verificationTokenExpiresAt: 'verificationTokenExpiresAt',
     sendEmailAttempts: 'sendEmailAttempts',
     lastEmailSentAt: 'lastEmailSentAt',
+    twoFactorSecret: 'twoFactorSecret',
+    isTwoFactorEnabled: 'isTwoFactorEnabled',
     googleId: 'googleId',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'

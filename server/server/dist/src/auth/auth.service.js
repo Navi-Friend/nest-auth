@@ -17,6 +17,8 @@ const config_1 = require("@nestjs/config");
 const jwt_1 = require("@nestjs/jwt");
 const crypto_1 = require("crypto");
 const mailer_1 = require("@nestjs-modules/mailer");
+const otplib_1 = require("otplib");
+const qrcode_1 = require("qrcode");
 let AuthService = class AuthService {
     prismaService;
     configService;
@@ -225,6 +227,46 @@ let AuthService = class AuthService {
     async sleep(ms) {
         return new Promise((resolve) => setTimeout(() => resolve(), ms));
     }
+    async generate2FACode(id) {
+        const user = await this.prismaService.user.findUnique({
+            where: {
+                id,
+            },
+        });
+        if (!user) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        const secret = (0, otplib_1.generateSecret)();
+        const otpauthUrl = (0, otplib_1.generateURI)({
+            strategy: 'totp',
+            issuer: 'Nest-auth app',
+            secret,
+            label: user.email,
+        });
+        const qrCodeDataURL = await (0, qrcode_1.toDataURL)(otpauthUrl);
+        await this.prismaService.user.update({
+            where: { email: user.email },
+            data: {
+                twoFactorSecret: secret,
+            },
+        });
+        return { secret, qrCodeDataURL };
+    }
+    async enable2FA(id, code) {
+        const user = await this.prismaService.user.findUnique({ where: { id } });
+        if (!user) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        const secret = user.twoFactorSecret;
+        if (!secret) {
+            throw new common_1.BadRequestException('Firstly generate a secret');
+        }
+        const isVerified = await (0, otplib_1.verify)({
+            secret,
+            token: code,
+        });
+    }
+    async verify2FALogin(id, code) { }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([

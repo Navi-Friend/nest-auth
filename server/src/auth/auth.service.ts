@@ -17,6 +17,8 @@ import { randomBytes } from 'crypto';
 import { MailerService } from '@nestjs-modules/mailer';
 import { User } from '../generated/prisma/client';
 import { GoogleUser } from './interfaces/google-user.interface';
+import { generateSecret, generateURI, verify as otpVerify } from 'otplib';
+import { toDataURL } from 'qrcode';
 
 @Injectable()
 export class AuthService {
@@ -86,18 +88,30 @@ export class AuthService {
 		};
 	}
 
-	login(id: number): AuthResponse {
+	login(
+		id: number,
+		isTwoFactorEnabled: boolean,
+	): AuthResponse | { tempToken: string; requires2FA: true } {
+		if (isTwoFactorEnabled) {
+			const tempPayload: JwtPayload = { id, type: '2fa' };
+			const tempToken = this.jwtService.sign(tempPayload, {
+				expiresIn: '5m',
+			});
+
+			return { tempToken, requires2FA: true };
+		}
 		return this.generateTokens(id);
 	}
 
 	private generateTokens(id: number): AuthResponse {
-		const payload: JwtPayload = { id };
+		const accessPayload: JwtPayload = { id, type: 'access' };
+		const refreshPayload: JwtPayload = { id, type: 'refresh' };
 
-		const accessToken = this.jwtService.sign(payload, {
+		const accessToken = this.jwtService.sign(accessPayload, {
 			expiresIn: this.JWT_ACCESS_TOKEN_TTL,
 		});
 
-		const refreshToken = this.jwtService.sign(payload, {
+		const refreshToken = this.jwtService.sign(refreshPayload, {
 			expiresIn: this.JWT_REFRESH_TOKEN_TTL,
 		});
 
@@ -300,5 +314,93 @@ export class AuthService {
 
 	private async sleep(ms: number): Promise<void> {
 		return new Promise((resolve) => setTimeout(() => resolve(), ms));
+	}
+
+	async generate2FACode(id: number) {
+		const user = await this.prismaService.user.findUnique({
+			where: {
+				id,
+			},
+		});
+
+		if (!user) {
+			throw new NotFoundException('User not found');
+		}
+
+		const secret = generateSecret();
+
+		const otpauthUrl = generateURI({
+			strategy: 'totp',
+			issuer: 'Nest-auth app',
+			secret,
+			label: user.email,
+		});
+
+		const qrCodeDataURL = await toDataURL(otpauthUrl);
+
+		await this.prismaService.user.update({
+			where: { email: user.email },
+			data: {
+				twoFactorSecret: secret,
+			},
+		});
+		return { secret, qrCodeDataURL };
+	}
+
+	async enable2FA(id: number, code: string) {
+		const user = await this.prismaService.user.findUnique({ where: { id } });
+
+		if (!user) {
+			throw new NotFoundException('User not found');
+		}
+
+		if (!user.twoFactorSecret) {
+			throw new BadRequestException('Firstly generate a secret');
+		}
+
+		const isVerified = await otpVerify({
+			secret: user.twoFactorSecret,
+			token: code,
+		});
+
+		if (!isVerified) {
+			throw new BadRequestException('Invalid code');
+		}
+
+		await this.prismaService.user.update({
+			where: { id },
+			data: { isTwoFactorEnabled: true },
+		});
+	}
+
+	async verify2FALogin(tempToken: string, code: string): Promise<AuthResponse> {
+		try {
+			const payload = this.jwtService.verify<JwtPayload>(tempToken);
+
+			if (payload.type !== '2fa' || !payload.id) {
+				throw new BadRequestException('Invalid token');
+			}
+
+			const user = await this.prismaService.user.findUnique({
+				where: { id: payload.id },
+			});
+
+			if (!user || !user.twoFactorSecret) {
+				throw new UnauthorizedException('2FA not enabled');
+			}
+
+			const isVerified = await otpVerify({
+				token: code,
+				secret: user.twoFactorSecret,
+			});
+
+			if (!isVerified) {
+				throw new UnauthorizedException('Invalid 2FA code');
+			}
+
+			return this.generateTokens(user.id);
+		} catch {
+			throw new UnauthorizedException('Invalid or expired 2FA session');
+		}
 	}
 }
