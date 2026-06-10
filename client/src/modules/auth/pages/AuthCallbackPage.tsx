@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { useAuthStore } from "../state/auth-state";
+import { useAuthStore } from "../store/auth-store";
 
 export function AuthCallbackPage() {
     const setAccessToken = useAuthStore((state) => state.setAccessToken);

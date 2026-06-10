@@ -23,7 +23,8 @@ import { API_URL } from "@/shared/api/api";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { ApiError } from "@/shared/api/api-error";
-import { useAuthStore } from "../state/auth-state";
+import { useAuthStore } from "../store/auth-store";
+import { AxiosError } from "axios";
 
 export function SignupForm() {
     const navigate = useNavigate();
@@ -53,9 +54,11 @@ export function SignupForm() {
             authStore.setAccessToken(res.accessToken);
             navigate(`/resend-email?email=${data.email}`);
         } catch (error) {
-            const apiError = new ApiError(error);
+            if (error instanceof AxiosError) {
+                const apiError = new ApiError(error);
 
-            toast.error(apiError.responseMessage);
+                toast.error(apiError.responseMessage);
+            }
         }
     };
 

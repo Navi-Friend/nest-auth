@@ -11,5 +11,5 @@ export class Generate2FAResponseDto {
 		description: 'Data URL изображения QR-кода для сканирования',
 		example: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...',
 	})
-	qrCodeDataURL: string;
+	otpAuthUrl: string;
 }

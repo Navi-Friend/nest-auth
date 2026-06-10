@@ -1,17 +1,31 @@
-import { useAuthStore } from "@/modules/auth/state/auth-state";
+import { useAuthStore } from "@/modules/auth/store/auth-store";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { Outlet, useNavigate } from "react-router";
+import { api } from "../api/api";
+import { useUserStore, type User } from "@/modules/profile/store/user-store";
 
 export function AppLayout() {
     const navigate = useNavigate();
+    const setUser = useUserStore((state) => state.setUser);
     const accessToken = useAuthStore((state) => state.accessToken);
+    const { data: userData } = useQuery<User>({
+        queryKey: ["user-me"],
+        queryFn: async () => {
+            const { data } = await api.get("/auth/me");
+            return data;
+        },
+        enabled: !!accessToken,
+        retry: 3,
+    });
 
     useEffect(() => {
-        console.log("layout", accessToken);
         if (!accessToken) {
             navigate("/login");
+        } else if (userData) {
+            setUser(userData);
         }
-    }, [accessToken, navigate]);
+    }, [accessToken, navigate, setUser, userData]);
 
     return (
         <>

@@ -8,6 +8,7 @@ import { SignupPage } from "@/modules/auth/pages/SignupPage";
 import { ResendEmailPage } from "@/modules/auth/pages/ResendEmailPage";
 import { createBrowserRouter, Navigate } from "react-router";
 import { AuthVerifyEmailPage } from "@/modules/auth/pages/AuthVerifyEmailPage";
+import { TwoFactorVerifyPage } from "./modules/auth/pages/2faVerifyPage";
 
 export const router = createBrowserRouter([
     {
@@ -19,6 +20,7 @@ export const router = createBrowserRouter([
             { path: "signup", Component: SignupPage },
             { path: "resend-email", Component: ResendEmailPage },
             { path: "verify-email", Component: AuthVerifyEmailPage },
+            { path: "2fa-verify", Component: TwoFactorVerifyPage },
         ],
     },
     {

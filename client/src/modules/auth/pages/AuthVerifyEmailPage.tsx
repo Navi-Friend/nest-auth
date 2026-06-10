@@ -11,7 +11,7 @@ import {
     CardTitle,
 } from "@/shared//components/ui/card";
 import { useVerifyEmail } from "@/modules/auth/hooks/useVerifyEmail";
-import { useAuthStore } from "../state/auth-state";
+import { useAuthStore } from "../store/auth-store";
 
 export function AuthVerifyEmailPage() {
     const [searchParams] = useSearchParams();

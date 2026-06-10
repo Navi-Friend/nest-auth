@@ -48,6 +48,7 @@ import type { User } from '../generated/prisma/client';
 import { Enable2FADto } from './dto/response/enable2fa.dto';
 import { Verify2FADto } from './dto/request/verify2fa.dto';
 import { Generate2FAResponseDto } from './dto/response/gerate2fa.dto';
+import { UserResponse } from './dto/response/user.dto';
 
 @ApiTags('Auth')
 @UseInterceptors(AuthCookieInterceptor)
@@ -129,13 +130,21 @@ export class AuthController {
 		summary: 'Protected route',
 		description: 'Requires access token',
 	})
-	@ApiOkResponse()
+	@ApiOkResponse({ type: UserResponse })
 	@ApiBearerAuth()
 	@Authorization()
 	@Get('me')
 	@HttpCode(HttpStatus.OK)
-	me(@CurrentUser() user: User) {
-		return user;
+	me(@CurrentUser() user: User): UserResponse {
+		const userResponse: UserResponse = {
+			id: user.id,
+			email: user.email,
+			isTwoFactorEnabled: user.isTwoFactorEnabled,
+			isVerified: user.isVerified,
+			name: user.name,
+		};
+
+		return userResponse;
 	}
 
 	@ApiOperation({
@@ -215,13 +224,13 @@ export class AuthController {
 
 	@Authorization()
 	@ApiOperation({ summary: 'Generate a secret and QR code for setting up 2FA' })
-	@ApiOkResponse({
+	@ApiCreatedResponse({
 		description: 'Successful. Returns the secret and QR code.',
 		type: Generate2FAResponseDto,
 	})
 	@ApiUnauthorizedResponse({ description: 'User not authorized' })
 	@ApiNotFoundResponse({ description: 'User not found' })
-	@Get('2fa/generate')
+	@Post('2fa/generate')
 	async generate2FACode(@CurrentUser('id') id: number) {
 		return await this.authService.generate2FACode(id);
 	}

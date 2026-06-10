@@ -18,8 +18,10 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { User } from '../generated/prisma/client';
 import { GoogleUser } from './interfaces/google-user.interface';
 import { generateSecret, generateURI, verify as otpVerify } from 'otplib';
-import { toDataURL } from 'qrcode';
+
 import { Verify2FADto } from './dto/request/verify2fa.dto';
+import { Generate2FAResponseDto } from './dto/response/gerate2fa.dto';
+import { VerifyResult } from 'otplib/functional';
 
 @Injectable()
 export class AuthService {
@@ -317,7 +319,7 @@ export class AuthService {
 		return new Promise((resolve) => setTimeout(() => resolve(), ms));
 	}
 
-	async generate2FACode(id: number) {
+	async generate2FACode(id: number): Promise<Generate2FAResponseDto> {
 		const user = await this.prismaService.user.findUnique({
 			where: {
 				id,
@@ -330,14 +332,12 @@ export class AuthService {
 
 		const secret = generateSecret();
 
-		const otpauthUrl = generateURI({
+		const otpAuthUrl = generateURI({
 			strategy: 'totp',
 			issuer: 'Nest-auth app',
 			secret,
 			label: user.email,
 		});
-
-		const qrCodeDataURL = await toDataURL(otpauthUrl);
 
 		await this.prismaService.user.update({
 			where: { email: user.email },
@@ -345,10 +345,10 @@ export class AuthService {
 				twoFactorSecret: secret,
 			},
 		});
-		return { secret, qrCodeDataURL };
+		return { secret, otpAuthUrl };
 	}
 
-	async enable2FA(id: number, code: string) {
+	async enable2FA(id: number, code: string): Promise<void> {
 		const user = await this.prismaService.user.findUnique({ where: { id } });
 
 		if (!user) {
@@ -359,12 +359,12 @@ export class AuthService {
 			throw new BadRequestException('Firstly generate a secret');
 		}
 
-		const isVerified = await otpVerify({
+		const verifyResult: VerifyResult = await otpVerify({
 			secret: user.twoFactorSecret,
 			token: code,
 		});
 
-		if (!isVerified) {
+		if (!verifyResult.valid) {
 			throw new BadRequestException('Invalid code');
 		}
 
@@ -393,12 +393,12 @@ export class AuthService {
 				throw new UnauthorizedException('2FA not enabled');
 			}
 
-			const isVerified = await otpVerify({
+			const verifyResult: VerifyResult = await otpVerify({
 				token: code,
 				secret: user.twoFactorSecret,
 			});
 
-			if (!isVerified) {
+			if (!verifyResult.valid) {
 				throw new UnauthorizedException('Invalid 2FA code');
 			}
 
