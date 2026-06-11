@@ -7,7 +7,7 @@ export const useSignup = () => {
             email: string;
             password: string;
         }) => {
-            const { data }: { data: { accessToken: string } } = await api.post(
+            const { data }: { data: { message: string } } = await api.post(
                 "/auth/register",
                 credentials,
             );

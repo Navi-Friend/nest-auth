@@ -23,7 +23,6 @@ import { API_URL } from "@/shared/api/api";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { ApiError } from "@/shared/api/api-error";
-import { useAuthStore } from "../store/auth-store";
 import { AxiosError } from "axios";
 
 export function SignupForm() {
@@ -39,19 +38,16 @@ export function SignupForm() {
         },
     });
 
-    const authStore = useAuthStore((state) => state);
-
     const signupMutation = useSignup();
 
     const onSubmit = async (data: SignupInput) => {
         try {
-            const res = await signupMutation.mutateAsync(data);
+            await signupMutation.mutateAsync(data);
 
             toast.success(
                 "To finish registration, please confirm your email. We sent a letter to your email",
             );
 
-            authStore.setAccessToken(res.accessToken);
             navigate(`/resend-email?email=${data.email}`);
         } catch (error) {
             if (error instanceof AxiosError) {
